@@ -24,6 +24,7 @@
           })
           jq
           nixos-shell
+          wget
         ];
         nativeBuildInputs = with pkgs; [ pkg-config nixpkgs-fmt ];
         libs = with pkgs; [];
