@@ -3,5 +3,6 @@ members = [
 	"utils",
 	"_1_trebuchet",
 	"_2_cube_conundrum",
+	"_3_gear_ratios",
 ]
 resolver = "2"
