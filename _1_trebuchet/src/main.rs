@@ -1,8 +1,7 @@
-use aho_corasick::{AhoCorasick, PatternID};
-use std::fs::File;
-use std::io::prelude::*;
+use aho_corasick::AhoCorasick;
+use std::collections::HashMap;
 use std::str::FromStr;
-use std::{collections::HashMap, env};
+use utils::get_file_string;
 
 fn part1(s: String) -> u64 {
     let mut res = 0;
@@ -54,10 +53,7 @@ fn part2(s: String) -> u64 {
 }
 
 fn main() {
-    let args = env::args().collect::<Vec<String>>();
-    let fp = args.get(1).unwrap();
-    let mut f = File::open(fp).unwrap();
-    let mut s = String::new();
-    f.read_to_string(&mut s).unwrap();
+    let s = get_file_string();
+    println!("{}", part1(s.clone()));
     println!("{}", part2(s));
 }

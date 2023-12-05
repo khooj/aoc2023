@@ -1,0 +1,7 @@
+[workspace]
+members = [
+	"utils",
+	"_1_trebuchet",
+	"_2_cube_conundrum",
+]
+resolver = "2"
