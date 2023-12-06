@@ -1,4 +1,4 @@
-use std::collections::{hash_map::RandomState, HashSet};
+use std::collections::{hash_map::RandomState, HashSet, HashMap};
 
 use log::debug;
 use nom::{
@@ -32,9 +32,8 @@ fn parse_cards(s: &str) -> Vec<Card> {
     cards
 }
 
-fn cards_points_part1(s: String) -> u64 {
-    let cards = parse_cards(&s);
-    debug!("cards {:?}", cards);
+fn cards_points_part1(s: &str) -> u64 {
+    let cards = parse_cards(s);
     let mut res = 0;
     for card in cards {
         // explicit type needed?
@@ -49,10 +48,30 @@ fn cards_points_part1(s: String) -> u64 {
     res
 }
 
+fn total_cards(s: &str) -> u64 {
+    let cards = parse_cards(s);
+    let mut nums = HashMap::new();
+    let last_id = cards.last().unwrap().id + 1;
+    for card in cards {
+        *nums.entry(card.id).or_default() += 1;
+        let win: HashSet<u64, RandomState> = HashSet::from_iter(card.winning);
+        let have = HashSet::from_iter(card.have);
+        let winning_numbers_count = have.intersection(&win).count();
+        debug!("have {} wins for card {}", winning_numbers_count, card.id);
+        for i in (card.id+1)..=(card.id+winning_numbers_count as u64) {
+            *nums.entry(i).or_default() += *nums.entry(card.id).or_default();
+        }
+    }
+    debug!("result card instances {:?}", nums);
+    assert!(!nums.contains_key(&last_id));
+    nums.values().sum()
+}
+
 fn main() {
     env_logger::init();
     let s = get_file_string();
-    println!("part1 {}", cards_points_part1(s));
+    println!("part1 {}", cards_points_part1(&s));
+    println!("part2 {}", total_cards(&s));
 }
 
 #[cfg(test)]
