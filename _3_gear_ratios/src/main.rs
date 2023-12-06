@@ -7,7 +7,7 @@ fn parse_int(
     char_col: i32,
     mat: &[&[char]],
     parsed: &mut HashSet<(usize, usize, usize)>,
-) -> u64 {
+) -> Option<u64> {
     // caller should guarantee that row/col are valid idx for mat
     let row = char_row as usize;
     let col = char_col as usize;
@@ -35,19 +35,19 @@ fn parse_int(
 
     if parsed.contains(&(row, st, end)) {
         debug!("returned 0 because already processed {:?}", (st, end));
-        return 0;
+        return None;
     }
 
     // println!("st {} end {}", st, end);
 
-    let k: String = dbg!(mat[row][st..=end].iter().collect());
+    let k: String = mat[row][st..=end].iter().collect();
 
     parsed.insert((row, st, end));
 
-    k.parse().unwrap()
+    Some(k.parse().unwrap())
 }
 
-fn sum_around(char_row: i32, char_col: i32, mat: &[&[char]]) -> u64 {
+fn ints_around(char_row: i32, char_col: i32, mat: &[&[char]]) -> Vec<u64> {
     //   8 1 2
     //    \|/
     // 7 - # - 3
@@ -63,7 +63,7 @@ fn sum_around(char_row: i32, char_col: i32, mat: &[&[char]]) -> u64 {
         (char_row, char_col - 1),
         (char_row - 1, char_col - 1),
     ];
-    let mut res = 0;
+    let mut res = vec![];
     let mut parsed = HashSet::new();
     debug!("row {} col {} symbol {}", char_row, char_col, mat[char_row as usize][char_col as usize]);
 
@@ -85,7 +85,9 @@ fn sum_around(char_row: i32, char_col: i32, mat: &[&[char]]) -> u64 {
 
         debug!("dir row {} col {}", row, col);
 
-        res += parse_int(row, col, mat, &mut parsed);
+        if let Some(num) = parse_int(row, col, mat, &mut parsed) {
+            res.push(num);
+        }
     }
     res
 }
@@ -107,7 +109,27 @@ fn sum_of_part_numbers_part1(s: String) -> u64 {
         for col in 0..view[0].len() {
             if !view[row][col].is_numeric() && view[row][col] != '.' {
                 // println!("found at row {} col {}", row, col);
-                res += dbg!(sum_around(row as i32, col as i32, view));
+                res += ints_around(row as i32, col as i32, view).iter().sum::<u64>();
+            }
+        }
+    }
+    res
+}
+
+fn engine_parts_part2(s: String) -> u64 {
+    let arr: Vec<Vec<char>> = s.lines().map(|e| e.chars().collect()).collect();
+    let view: Vec<&[char]> = arr.iter().map(|v| &v[..]).collect();
+    let view = &view[..];
+    assert_square_mat(view);
+    let mut res = 0;
+    for row in 0..view.len() {
+        for col in 0..view[0].len() {
+            if view[row][col] == '*' {
+                // println!("found at row {} col {}", row, col);
+                let ints = ints_around(row as i32, col as i32, view);
+                if ints.len() == 2 {
+                    res += ints.iter().fold(1, |acc, x| acc * x);
+                }
             }
         }
     }
@@ -130,4 +152,5 @@ fn main() {
     env_logger::init();
     let s = get_file_string();
     println!("part1 {}", sum_of_part_numbers_part1(s.clone()));
+    println!("part2 {}", engine_parts_part2(s));
 }
