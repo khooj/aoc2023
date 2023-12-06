@@ -6,7 +6,7 @@ use nom::{
     character::complete::{char, newline, u64},
     combinator::opt,
     multi::{many0, many1},
-    sequence::{delimited, preceded, terminated},
+    sequence::{delimited, pair, preceded, terminated},
     IResult,
 };
 use utils::get_file_string;
@@ -79,8 +79,7 @@ fn parse_map_with_tag<'a>(t: &'a str) -> impl FnMut(&'a str) -> IResult<&'a str,
     delimited(tag(t), parse_map, many0(newline))
 }
 
-fn parse_input(s: &str) -> IResult<&str, (Vec<u64>, Vec<MapRanges>)> {
-    let (s, seeds) = delimited(tag("seeds:"), many0(preceded(char(' '), u64)), many1(newline))(s)?;
+fn parse_input(s: &str) -> IResult<&str, Vec<MapRanges>> {
     let (s, seed_to_soil) = parse_map_with_tag("seed-to-soil map:\n")(s)?;
     let (s, soild_to_fertilizer) = parse_map_with_tag("soil-to-fertilizer map:\n")(s)?;
     let (s, fertilizer_to_water) = parse_map_with_tag("fertilizer-to-water map:\n")(s)?;
@@ -91,23 +90,29 @@ fn parse_input(s: &str) -> IResult<&str, (Vec<u64>, Vec<MapRanges>)> {
 
     Ok((
         s,
-        (
-            seeds,
-            vec![
-                seed_to_soil,
-                soild_to_fertilizer,
-                fertilizer_to_water,
-                water_to_light,
-                light_to_temperature,
-                temperature_to_humidity,
-                humidity_to_location,
-            ],
-        ),
+        vec![
+            seed_to_soil,
+            soild_to_fertilizer,
+            fertilizer_to_water,
+            water_to_light,
+            light_to_temperature,
+            temperature_to_humidity,
+            humidity_to_location,
+        ],
     ))
 }
 
+fn parse_seeds(s: &str) -> IResult<&str, Vec<u64>> {
+    delimited(
+        tag("seeds:"),
+        many0(preceded(char(' '), u64)),
+        many1(newline),
+    )(s)
+}
+
 fn lowest_location_part1(s: &str) -> u64 {
-    let (_, (seeds, maps)) = parse_input(s).unwrap();
+    let (s, seeds) = parse_seeds(s).unwrap();
+    let (_, maps) = parse_input(s).unwrap();
     let mut res = u64::MAX;
     for seed in seeds {
         let mut loc = seed;
@@ -121,10 +126,48 @@ fn lowest_location_part1(s: &str) -> u64 {
     res
 }
 
+fn parse_seeds_range(s: &str) -> IResult<&str, Vec<Range<u64>>> {
+    let (s, seeds) = delimited(
+        tag("seeds:"),
+        many1(pair(preceded(char(' '), u64), preceded(char(' '), u64))),
+        many1(newline),
+    )(s)?;
+    Ok((
+        s,
+        seeds
+            .into_iter()
+            .map(|(start, len)| Range {
+                start,
+                end: start + len,
+            })
+            .collect(),
+    ))
+}
+
+// too slow (2:06 min), probably because of seeds loop
+fn lowest_location_part2(s: &str) -> u64 {
+    let (s, seeds) = parse_seeds_range(s).unwrap();
+    let (_, maps) = parse_input(s).unwrap();
+    let mut res = u64::MAX;
+    for seed_range in seeds {
+        for seed in seed_range {
+            let mut loc = seed;
+            for map in &maps {
+                loc = map.map(loc);
+            }
+            if loc < res {
+                res = loc;
+            }
+        }
+    }
+    res
+}
+
 fn main() {
     env_logger::init();
     let s = get_file_string();
     println!("part1 {}", lowest_location_part1(&s));
+    println!("part2 {}", lowest_location_part2(&s));
 }
 
 #[cfg(test)]
