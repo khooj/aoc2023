@@ -47,6 +47,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "_6_wait_for_it"
+version = "0.1.0"
+dependencies = [
+ "env_logger",
+ "log",
+ "nom",
+ "utils",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
