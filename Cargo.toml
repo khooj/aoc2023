@@ -4,5 +4,6 @@ members = [
 	"_1_trebuchet",
 	"_2_cube_conundrum",
 	"_3_gear_ratios",
+	"_4_scratchcards",
 ]
 resolver = "2"
