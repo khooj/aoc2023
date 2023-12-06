@@ -1,21 +1,20 @@
 use std::collections::HashSet;
-
+use log::debug;
 use utils::get_file_string;
 
 fn parse_int(
     char_row: i32,
     char_col: i32,
     mat: &[&[char]],
-    parsed: &mut HashSet<(usize, usize)>,
+    parsed: &mut HashSet<(usize, usize, usize)>,
 ) -> u64 {
     // caller should guarantee that row/col are valid idx for mat
     let row = char_row as usize;
     let col = char_col as usize;
 
-    if !mat[row][col].is_numeric() {
-        return 0;
-    }
-
+    // if !mat[row][col].is_numeric() {
+    //     return 0;
+    // }
 
     // we wont parse vertical numbers for now
     let mut st = 0;
@@ -34,7 +33,8 @@ fn parse_int(
         }
     }
 
-    if parsed.contains(&(st, end)) {
+    if parsed.contains(&(row, st, end)) {
+        debug!("returned 0 because already processed {:?}", (st, end));
         return 0;
     }
 
@@ -42,7 +42,7 @@ fn parse_int(
 
     let k: String = dbg!(mat[row][st..=end].iter().collect());
 
-    parsed.insert((st, end));
+    parsed.insert((row, st, end));
 
     k.parse().unwrap()
 }
@@ -65,21 +65,25 @@ fn sum_around(char_row: i32, char_col: i32, mat: &[&[char]]) -> u64 {
     ];
     let mut res = 0;
     let mut parsed = HashSet::new();
+    debug!("row {} col {} symbol {}", char_row, char_col, mat[char_row as usize][char_col as usize]);
 
     for idx in idxs {
         let (row, col) = idx;
         if row < 0 || !(0..mat.len()).contains(&(row as usize)) {
+            debug!("skipped because of row");
             continue;
         }
         if col < 0 || !(0..mat[0].len()).contains(&(col as usize)) {
+            debug!("skipped because of col");
             continue;
         }
 
         if !mat[row as usize][col as usize].is_numeric() {
+            debug!("skipped because of not numeric");
             continue;
         }
 
-        // println!("row {} col {}", row, col);
+        debug!("dir row {} col {}", row, col);
 
         res += parse_int(row, col, mat, &mut parsed);
     }
@@ -115,7 +119,7 @@ mod tests {
     #[test]
     fn check_range() {
         let mut count = 0;
-        for i in 10..0 {
+        for _i in 10..0 {
             count += 1;
         }
         assert!(count > 0);
@@ -123,6 +127,7 @@ mod tests {
 }
 
 fn main() {
+    env_logger::init();
     let s = get_file_string();
     println!("part1 {}", sum_of_part_numbers_part1(s.clone()));
 }
