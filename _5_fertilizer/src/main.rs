@@ -145,6 +145,7 @@ fn parse_seeds_range(s: &str) -> IResult<&str, Vec<Range<u64>>> {
 }
 
 // too slow (2:06 min), probably because of seeds loop
+// try to implement and analyze this https://github.com/hyper-neutrino/advent-of-code/blob/main/2023/day05p2.py
 fn lowest_location_part2(s: &str) -> u64 {
     let (s, seeds) = parse_seeds_range(s).unwrap();
     let (_, maps) = parse_input(s).unwrap();
