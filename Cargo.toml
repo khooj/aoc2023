@@ -7,5 +7,6 @@ members = [
 	"_4_scratchcards",
 	"_5_fertilizer",
 	"_6_wait_for_it",
+	"_7_camel_cards",
 ]
 resolver = "2"
