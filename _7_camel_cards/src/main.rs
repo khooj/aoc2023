@@ -1,9 +1,15 @@
+mod priority_queue;
+
 use itertools::Itertools;
 use log::debug;
+use priority_queue::Pq;
 use std::cmp::Ordering;
 use utils::get_file_string;
 
-#[derive(PartialEq, PartialOrd, Debug)]
+use std::collections::BinaryHeap;
+use std::cmp::Reverse;
+
+#[derive(PartialEq, PartialOrd, Eq, Ord, Debug, Clone)]
 enum HandStrength {
     High = 0,
     One,
@@ -14,6 +20,7 @@ enum HandStrength {
     Five,
 }
 
+#[derive(Clone, Debug)]
 struct Hand(String, HandStrength);
 
 impl Hand {
@@ -68,9 +75,17 @@ impl PartialEq for Hand {
 
 impl PartialOrd for Hand {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Eq for Hand {}
+
+impl Ord for Hand {
+    fn cmp(&self, other: &Self) -> Ordering {
         if let Some(o) = self.1.partial_cmp(&other.1) {
             if o == Ordering::Greater || o == Ordering::Less {
-                return Some(o);
+                return o;
             }
         }
 
@@ -82,16 +97,37 @@ impl PartialOrd for Hand {
                 if k == Ordering::Equal {
                     continue;
                 }
-                return Some(k);
+                return k;
             }
         }
-        Some(Ordering::Equal)
+        Ordering::Equal
     }
 }
 
+#[derive(Clone, Debug)]
 struct HandBid {
     hand: Hand,
     bid: u64,
+}
+
+impl PartialOrd for HandBid {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.hand.partial_cmp(&other.hand)
+    }
+}
+
+impl PartialEq for HandBid {
+    fn eq(&self, other: &Self) -> bool {
+        self.hand.eq(&other.hand)
+    }
+}
+
+impl Eq for HandBid {}
+
+impl Ord for HandBid {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.hand.cmp(&other.hand)
+    }
 }
 
 fn parse_input(s: &str) -> Vec<HandBid> {
@@ -106,14 +142,42 @@ fn parse_input(s: &str) -> Vec<HandBid> {
 }
 
 fn total_winnings(s: &str) -> u64 {
-    let mut bids = parse_input(s);
-    bids.sort_by(|lhs, rhs| lhs.hand.partial_cmp(&rhs.hand).unwrap());
-    bids.into_iter()
-        .enumerate()
-        .fold(0, |acc, (idx, hb)| acc + (idx as u64 + 1) * hb.bid)
+    let bids = parse_input(s);
+    let mut pq = Pq::new(bids.len());
+    for b in bids {
+        pq.insert(b);
+    }
+
+    let mut rank = 1u64;
+    let mut res = 0u64;
+    while let Some(ll) = pq.get() {
+        debug!("ll {:?} with rank {}", ll, rank);
+        res += rank.saturating_mul(ll.into_iter().map(|el| el.bid).sum());
+        rank += 1;
+    }
+    res
+}
+
+fn total_winnings_variant2(s: &str) -> u64 {
+    let bids = parse_input(s);
+    let mut pq = BinaryHeap::new();
+    for b in bids {
+        pq.push(Reverse(b));
+    }
+
+    let mut rank = 1u64;
+    let mut res = 0u64;
+    while let Some(hb) = pq.pop() {
+        debug!("hb {:?} with rank {}", hb, rank);
+        res += rank.saturating_mul(hb.0.bid);
+        rank += 1;
+    }
+    res
 }
 
 fn main() {
+    env_logger::init();
+
     let s = get_file_string();
     println!("part1 {}", total_winnings(&s));
 }
