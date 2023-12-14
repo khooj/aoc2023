@@ -1,3 +1,5 @@
+// i thought that it is possible for part1 to have the same hands
+// so it should be counter as the same rank
 use log::debug;
 use std::collections::LinkedList;
 
@@ -54,27 +56,38 @@ impl<T: Ord + Eq + std::fmt::Debug> Pq<T> {
 
     pub fn insert(&mut self, item: T) {
         let mut idx = 0;
-        loop {
-            let ll = self.data.get_mut(idx).expect("can't get ll in insert");
+        for (i, ll) in self.data.iter_mut().enumerate() {
             if ll.is_empty() {
                 ll.push_back(item);
+                idx = i;
                 break;
             }
-
-            let el = ll.front().expect("can't get first elem of ll");
-            if item == *el {
+            if *ll.front().unwrap() == item {
                 ll.push_back(item);
-                break;
-            }
-
-            if self.left(idx).unwrap().is_empty() {
-                idx = Self::left_idx(idx);
-            } else if self.right(idx).unwrap().is_empty() {
-                idx = Self::right_idx(idx);
-            } else {
-                idx = Self::left_idx(idx);
+                return;
             }
         }
+        // loop {
+        //     let ll = self.data.get_mut(idx).expect("can't get ll in insert");
+        //     if ll.is_empty() {
+        //         ll.push_back(item);
+        //         break;
+        //     }
+
+        //     let el = ll.front().expect("can't get first elem of ll");
+        //     if item == *el {
+        //         ll.push_back(item);
+        //         break;
+        //     }
+
+        //     if self.left(idx).unwrap().is_empty() {
+        //         idx = Self::left_idx(idx);
+        //     } else if self.right(idx).unwrap().is_empty() {
+        //         idx = Self::right_idx(idx);
+        //     } else {
+        //         idx = Self::left_idx(idx);
+        //     }
+        // }
 
         self.shift_up(idx);
         debug!("after insert {:?}", self);
@@ -143,7 +156,13 @@ impl<T: Ord + Eq + std::fmt::Debug> Pq<T> {
             let replace_with_right = right.is_some()
                 && !right.unwrap().is_empty()
                 && right.unwrap().front().unwrap() < el;
-            if replace_with_left {
+            if replace_with_left && replace_with_right {
+                if left.unwrap().front().unwrap() < right.unwrap().front().unwrap() {
+                    replace_with = Self::left_idx(idx);
+                } else {
+                    replace_with = Self::right_idx(idx);
+                }
+            } else if replace_with_left {
                 replace_with = Self::left_idx(idx);
             } else if replace_with_right {
                 replace_with = Self::right_idx(idx);
@@ -176,11 +195,11 @@ mod tests {
     #[test]
     fn check_many() {
         let mut pq = Pq::new(10);
-        pq.insert(10);
-        pq.insert(1);
-        pq.insert(20);
-        pq.insert(2);
         pq.insert(33);
+        pq.insert(20);
+        pq.insert(10);
+        pq.insert(2);
+        pq.insert(1);
         pq.insert(10);
         println!("{:?}", pq);
         for i in [1, 2, 10, 20, 33] {

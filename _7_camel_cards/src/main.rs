@@ -6,8 +6,8 @@ use priority_queue::Pq;
 use std::cmp::Ordering;
 use utils::get_file_string;
 
-use std::collections::BinaryHeap;
 use std::cmp::Reverse;
+use std::collections::{BinaryHeap, HashSet};
 
 #[derive(PartialEq, PartialOrd, Eq, Ord, Debug, Clone)]
 enum HandStrength {
@@ -29,9 +29,9 @@ impl Hand {
         let freq = hand.chars().counts();
         let mut strength = HandStrength::High;
         if freq.len() == 5 {
-            strength = HandStrength::Five;
+            strength = HandStrength::High;
         } else if freq.len() == 1 {
-            // strength = HandStrength::High;
+            strength = HandStrength::Five;
         } else if freq.len() == 2 {
             let v: Vec<&usize> = freq.values().collect();
             if *v[0] == 4 || *v[1] == 4 {
@@ -69,7 +69,21 @@ impl Hand {
 
 impl PartialEq for Hand {
     fn eq(&self, other: &Self) -> bool {
-        self.1 == other.1
+        if self.1 != other.1 {
+            return false;
+        }
+
+        let lhs: Vec<_> = self.0.chars().collect();
+        let rhs: Vec<_> = other.0.chars().collect();
+        for i in 0..lhs.len() {
+            if let Some(k) = Hand::as_u32(&lhs[i]).partial_cmp(&Hand::as_u32(&rhs[i])) {
+                if k == Ordering::Equal {
+                    continue;
+                }
+                return false;
+            }
+        }
+        true
     }
 }
 
@@ -92,7 +106,7 @@ impl Ord for Hand {
         let lhs: Vec<_> = self.0.chars().collect();
         let rhs: Vec<_> = other.0.chars().collect();
         for i in 0..lhs.len() {
-            debug!("compare chars {} {}", &lhs[i], &rhs[i]);
+            // debug!("compare chars {} {}", &lhs[i], &rhs[i]);
             if let Some(k) = Hand::as_u32(&lhs[i]).partial_cmp(&Hand::as_u32(&rhs[i])) {
                 if k == Ordering::Equal {
                     continue;
@@ -158,6 +172,16 @@ fn total_winnings(s: &str) -> u64 {
     res
 }
 
+fn unique_elems(s: &str) -> bool {
+    let bids = parse_input(s);
+    let l = bids.len();
+    let mut h = HashSet::new();
+    for b in bids {
+        h.insert(b.hand.0);
+    }
+    return h.len() == l
+}
+
 fn total_winnings_variant2(s: &str) -> u64 {
     let bids = parse_input(s);
     let mut pq = BinaryHeap::new();
@@ -179,6 +203,7 @@ fn main() {
     env_logger::init();
 
     let s = get_file_string();
+    // println!("unique_elems {}", unique_elems(&s));
     println!("part1 {}", total_winnings(&s));
 }
 
